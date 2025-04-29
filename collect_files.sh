@@ -1,4 +1,4 @@
-#!/bin/bash
+
 set -euo pipefail
 
 max_depth=""
@@ -22,24 +22,28 @@ fi
 
 mkdir -p "$output_dir"
 
+declare -A counts
+
 if [[ -n "$max_depth" ]]; then
-  file_list=$(find "$input_dir" -maxdepth "$max_depth" -type f)
+  maxdepth_opt=("-maxdepth" "$max_depth")
 else
-  file_list=$(find "$input_dir" -type f)
+  maxdepth_opt=()
 fi
 
-declare -A counts
-while IFS= read -r file; do
+while IFS= read -r -d '' file; do
   base=$(basename "$file")
-  counts["$base"]=$((counts["$base"] + 1))
-  count=${counts["$base"]}
+  count=$((counts["$base"] + 1))
+  counts["$base"]=$count
   if [[ $count -eq 1 ]]; then
     out_name="$base"
   else
-    name="${base%.*}"
-    ext="${base##*.}"
-    suffix=$((count-1))
-    out_name="${name}${suffix}.${ext}"
+    if [[ "$base" == *.* ]]; then
+      name="${base%.*}"
+      ext="${base##*.}"
+      out_name="${name}$((count-1)).${ext}"
+    else
+      out_name="${base}$((count-1))"
+    fi
   fi
   cp "$file" "$output_dir/$out_name"
-done <<< "$file_list"
+done < <(find "$input_dir" "${maxdepth_opt[@]}" -type f -print0)
