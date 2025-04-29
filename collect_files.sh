@@ -1,4 +1,4 @@
-
+#!/bin/bash
 set -euo pipefail
 
 max_depth=""
@@ -38,7 +38,8 @@ while IFS= read -r file; do
   else
     name="${base%.*}"
     ext="${base##*.}"
-    out_name="${name}${count}.${ext}"
+    suffix=$((count-1))
+    out_name="${name}${suffix}.${ext}"
   fi
   cp "$file" "$output_dir/$out_name"
 done <<< "$file_list"
