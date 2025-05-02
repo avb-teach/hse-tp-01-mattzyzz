@@ -1,33 +1,44 @@
 
 import argparse
-from pathlib import Path
 import shutil
+from pathlib import Path
 from collections import defaultdict
 
 parser = argparse.ArgumentParser()
 parser.add_argument("input_dir")
 parser.add_argument("output_dir")
 parser.add_argument("--max_depth", type=int, default=None)
-args = parser.parse_args()
+opts = parser.parse_args()
 
-input_dir = Path(args.input_dir).resolve()
-output_dir = Path(args.output_dir).resolve()
-output_dir.mkdir(parents=True, exist_ok=True)
+src_dir = Path(opts.input_dir).resolve()
+dst_dir = Path(opts.output_dir).resolve()
+dst_dir.mkdir(parents=True, exist_ok=True)
 
-name_counter = defaultdict(int)
+seen_counts = defaultdict(int)
 
-for path in input_dir.rglob("*"):
-    if path.is_file():
-        if args.max_depth is not None:
-            depth = len(path.relative_to(input_dir).parts)
-            if depth > args.max_depth:
-                continue
+for item_path in src_dir.rglob("*"):
+    if not item_path.is_file():
+        continue
 
-        name = path.name
-        count = name_counter[name]
-        if count == 0:
-            new_name = name
-        else:
-            new_name = f"{path.stem}{count+1}{path.suffix}"
-        name_counter[name] += 1
-        shutil.copy2(path, output_dir / new_name)
+    segments = item_path.relative_to(src_dir).parts
+    if opts.max_depth:
+        tail_parts = segments[-opts.max_depth:]
+    else:
+        tail_parts = [segments[-1]]
+
+    sub_dirs = tail_parts[:-1]
+    orig_name = item_path.name
+    dup_count = seen_counts[orig_name]
+
+    if dup_count == 0:
+        final_name = tail_parts[-1]
+    else:
+        base = item_path.stem
+        ext = item_path.suffix
+        final_name = f"{base}{dup_count+1}{ext}"
+
+    seen_counts[orig_name] += 1
+
+    target_dir = dst_dir.joinpath(*sub_dirs) if sub_dirs else dst_dir
+    target_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(item_path, target_dir / final_name)
