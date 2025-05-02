@@ -1,8 +1,7 @@
-#!/usr/bin/env python3
-import sys
-import shutil
-from pathlib import Path
+
 import argparse
+from pathlib import Path
+import shutil
 from collections import defaultdict
 
 parser = argparse.ArgumentParser()
@@ -17,23 +16,18 @@ output_dir.mkdir(parents=True, exist_ok=True)
 
 name_counter = defaultdict(int)
 
-for file_path in input_dir.rglob("*"):
-    if file_path.is_file():
+for path in input_dir.rglob("*"):
+    if path.is_file():
         if args.max_depth is not None:
-            depth = len(file_path.relative_to(input_dir).parts)
+            depth = len(path.relative_to(input_dir).parts)
             if depth > args.max_depth:
                 continue
 
-        base_name = file_path.name
-        count = name_counter[base_name]
-
+        name = path.name
+        count = name_counter[name]
         if count == 0:
-            target_name = base_name
+            new_name = name
         else:
-            stem = file_path.stem
-            suffix = file_path.suffix
-            target_name = f"{stem}{count + 1}{suffix}"
-
-        name_counter[base_name] += 1
-        target_path = output_dir / target_name
-        shutil.copy2(file_path, target_path)
+            new_name = f"{path.stem}{count+1}{path.suffix}"
+        name_counter[name] += 1
+        shutil.copy2(path, output_dir / new_name)
