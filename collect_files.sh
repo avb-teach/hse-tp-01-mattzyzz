@@ -1,5 +1,5 @@
-input_dir="/home/input_dir"
-output_dir="/home/output_dir"
+input_dir="$1"
+output_dir="$2"
 mkdir -p "$output_dir"
 
 files=$(find "$input_dir" -type f)
